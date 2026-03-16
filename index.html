@@ -5,11 +5,10 @@
 <title>Syobon Web</title>
 
 <style>
+
 body{
 margin:0;
 overflow:hidden;
-background:#87CEEB;
-font-family:sans-serif;
 }
 
 canvas{
@@ -21,199 +20,262 @@ margin:auto;
 position:absolute;
 left:20px;
 top:10px;
-font-size:24px;
 color:white;
+font-size:24px;
 }
+
 </style>
 
 </head>
 
 <body>
 
-<div id="ui">Deaths: 0</div>
+<div id="ui">Deaths:0</div>
 
 <canvas id="game" width="900" height="450"></canvas>
 
+<audio id="bgm" src="bgm/field.ogg" loop></audio>
+
 <script>
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const ui = document.getElementById("ui");
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
+const ui=document.getElementById("ui")
+const bgm=document.getElementById("bgm")
 
-let gravity = 0.8;
-let deaths = 0;
+let jumpSound=new Audio("se/jump.ogg")
+let deathSound=new Audio("se/death.ogg")
+let goalSound=new Audio("se/goal.ogg")
+
+let playerImg=new Image()
+playerImg.src="img/player.PNG"
+
+let enemyImg=new Image()
+enemyImg.src="img/teki.PNG"
+
+let blockImg=new Image()
+blockImg.src="img/brock.PNG"
+
+let bgImg=new Image()
+bgImg.src="img/haikei.PNG"
+
+let gravity=0.8
+let deaths=0
 
 let player={
 x:100,
 y:300,
-w:30,
-h:30,
+w:32,
+h:32,
 vx:0,
 vy:0,
 jump:false
-};
+}
 
-let camera=0;
-let keys={};
+let camera=0
+let keys={}
 
 document.addEventListener("keydown",e=>{
-keys[e.key]=true;
-});
+
+keys[e.key]=true
+bgm.play()
+
+})
 
 document.addEventListener("keyup",e=>{
-keys[e.key]=false;
-});
+
+keys[e.key]=false
+
+})
 
 let blocks=[
-{x:0,y:380,w:2000,h:70},
+
+{x:0,y:380,w:3000,h:70},
 
 {x:300,y:330,w:100,h:20},
 {x:450,y:300,w:100,h:20},
+{x:650,y:330,w:100,h:20},
 
-// 偽ブロック
-{x:650,y:330,w:100,h:20,fake:true},
+{x:900,y:300,w:100,h:20},
+{x:1100,y:280,w:100,h:20},
+{x:1300,y:330,w:100,h:20}
 
-// 落ちる床
-{x:850,y:300,w:100,h:20,fall:true,vy:0}
-];
+]
 
 let spikes=[
-{x:520,y:360,w:30,h:20},
 
-// 隠しトゲ
-{x:720,y:360,w:30,h:20,hidden:true}
-];
+{x:520,y:360,w:30,h:20},
+{x:550,y:360,w:30,h:20},
+
+{x:1000,y:360,w:30,h:20}
+
+]
+
+let enemy={
+
+x:1200,
+y:300,
+w:32,
+h:32,
+dir:1
+
+}
+
+let goal={
+
+x:1700,
+y:300,
+w:40,
+h:80
+
+}
 
 function death(){
 
-deaths++;
-ui.innerText="Deaths: "+deaths;
+deaths++
 
-player.x=100;
-player.y=300;
-player.vx=0;
-player.vy=0;
+ui.innerText="Deaths:"+deaths
+
+deathSound.play()
+
+player.x=100
+player.y=300
+player.vx=0
+player.vy=0
 
 }
 
 function update(){
 
-if(keys["ArrowLeft"]) player.vx=-5;
-else if(keys["ArrowRight"]) player.vx=5;
-else player.vx=0;
+if(keys["ArrowLeft"]) player.vx=-5
+else if(keys["ArrowRight"]) player.vx=5
+else player.vx=0
 
 if(keys["ArrowUp"]&&!player.jump){
-player.vy=-13;
-player.jump=true;
+
+player.vy=-13
+player.jump=true
+
+jumpSound.play()
+
 }
 
-player.vy+=gravity;
+player.vy+=gravity
 
-player.x+=player.vx;
-player.y+=player.vy;
+player.x+=player.vx
+player.y+=player.vy
 
 for(let b of blocks){
 
-if(b.fake) continue;
+if(player.x<b.x+b.w &&
+player.x+player.w>b.x &&
+player.y+player.h>b.y &&
+player.y+player.h<b.y+20){
 
-if(player.x < b.x+b.w &&
-player.x+player.w > b.x &&
-player.y+player.h > b.y &&
-player.y+player.h < b.y+20){
+player.y=b.y-player.h
+player.vy=0
+player.jump=false
 
-player.y=b.y-player.h;
-player.vy=0;
-player.jump=false;
-
-if(b.fall){
-b.vy=5;
-}
-
-}
-
-if(b.fall){
-b.y+=b.vy;
 }
 
 }
 
 for(let s of spikes){
 
-if(s.hidden && player.x>650){
-s.hidden=false;
-}
+if(player.x<s.x+s.w &&
+player.x+player.w>s.x &&
+player.y<s.y+s.h &&
+player.y+player.h>s.y){
 
-if(player.x < s.x+s.w &&
-player.x+player.w > s.x &&
-player.y < s.y+s.h &&
-player.y+player.h > s.y){
-
-death();
+death()
 
 }
 
 }
 
-camera=player.x-200;
+enemy.x+=enemy.dir*2
+
+if(enemy.x>1300||enemy.x<1100) enemy.dir*=-1
+
+if(player.x<enemy.x+enemy.w &&
+player.x+player.w>enemy.x &&
+player.y<enemy.y+enemy.h &&
+player.y+player.h>enemy.y){
+
+death()
+
+}
+
+if(player.x>goal.x){
+
+goalSound.play()
+
+alert("CLEAR!")
+
+player.x=100
+
+}
+
+camera=player.x-200
 
 }
 
 function draw(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.clearRect(0,0,canvas.width,canvas.height)
 
-ctx.save();
-ctx.translate(-camera,0);
+ctx.drawImage(bgImg,camera,0,900,450)
 
-// ブロック
-ctx.fillStyle="brown";
+ctx.save()
+
+ctx.translate(-camera,0)
 
 for(let b of blocks){
 
-ctx.fillRect(b.x,b.y,b.w,b.h);
+ctx.drawImage(blockImg,b.x,b.y,b.w,b.h)
 
 }
 
-// トゲ
-ctx.fillStyle="red";
+ctx.fillStyle="red"
 
 for(let s of spikes){
 
-if(s.hidden) continue;
+ctx.beginPath()
 
-ctx.beginPath();
-ctx.moveTo(s.x,s.y+s.h);
-ctx.lineTo(s.x+s.w/2,s.y);
-ctx.lineTo(s.x+s.w,s.y+s.h);
-ctx.fill();
+ctx.moveTo(s.x,s.y+s.h)
+ctx.lineTo(s.x+s.w/2,s.y)
+ctx.lineTo(s.x+s.w,s.y+s.h)
+
+ctx.fill()
 
 }
 
-// しょぼん（顔）
-ctx.fillStyle="white";
-ctx.fillRect(player.x,player.y,player.w,player.h);
+ctx.drawImage(enemyImg,enemy.x,enemy.y,enemy.w,enemy.h)
 
-ctx.fillStyle="black";
-ctx.fillRect(player.x+5,player.y+8,5,5);
-ctx.fillRect(player.x+20,player.y+8,5,5);
+ctx.fillStyle="black"
 
-ctx.beginPath();
-ctx.arc(player.x+15,player.y+20,5,0,Math.PI);
-ctx.stroke();
+ctx.fillRect(goal.x,goal.y,goal.w,goal.h)
 
-ctx.restore();
+ctx.fillStyle="yellow"
+
+ctx.fillRect(goal.x+40,goal.y,40,20)
+
+ctx.drawImage(playerImg,player.x,player.y,player.w,player.h)
+
+ctx.restore()
 
 }
 
 function loop(){
 
-update();
-draw();
-requestAnimationFrame(loop);
+update()
+draw()
+
+requestAnimationFrame(loop)
 
 }
 
-loop();
+loop()
 
 </script>
 
