@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Syobon Web</title>
+</head>
+
+<body>
+
+<h1>しょぼんのアクション</h1>
+
+<canvas id="game" width="800" height="400"></canvas>
+
+<script>
+let canvas = document.getElementById("game");
+let ctx = canvas.getContext("2d");
+
+let x = 100;
+let y = 300;
+let vy = 0;
+
+let gravity = 0.8;
+
+document.addEventListener("keydown",e=>{
+ if(e.key=="ArrowUp"){
+  vy = -12;
+ }
+});
+
+function loop(){
+
+ vy += gravity;
+ y += vy;
+
+ if(y > 300){
+  y = 300;
+  vy = 0;
+ }
+
+ ctx.clearRect(0,0,800,400);
+
+ ctx.fillStyle="white";
+ ctx.fillRect(x,y,30,30);
+
+ requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
